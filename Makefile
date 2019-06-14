@@ -90,7 +90,7 @@ debug:
 	JLinkExe -device NRF52 -speed 4000 -if SWD -autoconnect 1
 
 sdk:
-	@echo Installing NRF SDK
+	@echo Installing NRF SDK and Toolchain
 	@if [ ! -d $(SDK_ROOT) ]; then \
 		if [ ! -f $(SDK_ZIP) ]; then \
 			echo Downloading sdk deps...; \
@@ -106,24 +106,28 @@ sdk:
 		mv $(SDK_TEMP)/$(NRF_SDK_FOLDER_NAME) $(SDK_ROOT); \
 		rmdir $(SDK_TEMP); \
 	fi; \
-	if [ ! -f $(GCC_ARCHIVE) ]; then \
-		echo Downloading gcc...; \
-		curl -o $(GCC_ARCHIVE) $(GCC_URL); \
-	fi; \
-	if [ "`md5 -q $(GCC_ARCHIVE)`" != "$(GCC_MD5)" ]; then \
-		echo GCC archive MD5 does not match. Delete and reinstall.; \
-		exit 1; \
-	fi; \
-	if [ ! -d $(GCC_OUTPUT_FOLDER) ]; then \
-		tar jxfkv $(GCC_ARCHIVE); \
-	fi; \
-	if [ -d $(GCC_OUTPUT_FOLDER) ]; then \
-		mv $(GCC_OUTPUT_FOLDER) $(TOOLCHAIN_DIR); \
+	if [ ! -d $(TOOLCHAIN_DIR) ]; then \
+		if [ ! -f $(GCC_ARCHIVE) ]; then \
+			echo Downloading gcc...; \
+			curl -o $(GCC_ARCHIVE) $(GCC_URL); \
+		fi; \
+		if [ "`md5 -q $(GCC_ARCHIVE)`" != "$(GCC_MD5)" ]; then \
+			echo GCC archive MD5 does not match. Delete and reinstall.; \
+			exit 1; \
+		fi; \
+		if [ ! -d $(GCC_OUTPUT_FOLDER) ]; then \
+			tar jxfkv $(GCC_ARCHIVE); \
+		fi; \
+		if [ -d $(GCC_OUTPUT_FOLDER) ]; then \
+			mv $(GCC_OUTPUT_FOLDER) $(TOOLCHAIN_DIR); \
+		fi; \
 	fi;
 	@echo Copyiing toolchain configuration file..
+	@cp -f $(SDK_CONFIG_DIR)/build_all.sh $(SDK_ROOT)/external/micro-ecc/
+	@cd $(SDK_ROOT)/external/micro-ecc/ && sh build_all.sh
 	@cp -f $(SDK_CONFIG_DIR)/Makefile.posix $(SDK_ROOT)/components/toolchain/gcc/
 	@echo SDK deps download and install complete.
-	@rm -rf $(SDK_ZIP) $(SDK_TEMP)
+	@rm -rf $(SDK_ZIP) $(SDK_TEMP) $(GCC_ARCHIVE)
 
 %.pb: %.proto
 	protoc -I$(PROTO_DIR) --go_out=$(PROTO_DIR) $<
