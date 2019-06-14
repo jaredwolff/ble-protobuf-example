@@ -21,6 +21,10 @@ BL_SETTINGS_SD  := bl_settings_sd
 # App filename
 APP_FILENAME    := protobuf
 
+# Commands
+MERGEHEX				:= $(BIN_DIR)/mergehex/mergehex
+NRFJPROG				:= $(BIN_DIR)/nrfjprog/nrfjprog
+
 # Get bootloader version
 BOOTLOADER_VER_STRING := $(shell cd bootloader; git describe --tags --abbrev=0)
 BOOTLOADER_VER_STRING_W_GITHASH := $(shell cd bootloader; git describe --tags --long)
@@ -46,7 +50,7 @@ SOFT_DEVICE := $(SDK_ROOT)/components/softdevice/s132/hex/s132_nrf52_6.1.0_softd
 PROTO_SRC   := $(wildcard $(PROTO_DIR)/*.proto)
 PROTO_PB    := $(PROTO_SRC:.proto=.pb)
 
-.PHONY: sdk sdk_clean clean build debug merge merge_all erase flash flash_all flash_softdevice ota settings default genkey
+.PHONY: sdk sdk_clean clean build debug merge merge_all erase flash flash_all flash_softdevice ota settings default genkey tools_osx
 
 default: build
 
@@ -68,33 +72,33 @@ build:
 
 merge: settings
 	@echo Merging settings with bootloader
-	mergehex -m $(BUILD_DIR)/$(APP_FILENAME).bootloader.$(BOOTLOADER_VER_STRING_W_GITHASH).hex $(BUILD_DIR)/$(SETTINGS).hex -o $(BUILD_DIR)/$(BL_SETTINGS).hex
+	$(MERGEHEX) -m $(BUILD_DIR)/$(APP_FILENAME).bootloader.$(BOOTLOADER_VER_STRING_W_GITHASH).hex $(BUILD_DIR)/$(SETTINGS).hex -o $(BUILD_DIR)/$(BL_SETTINGS).hex
 	@echo Merging app with bootloader + settings
 	@mkdir -p $(OUT_DIR)
-	mergehex -m $(BUILD_DIR)/$(BL_SETTINGS).hex $(BUILD_DIR)/$(APP_FILENAME).app.$(VER_STRING_W_GITHASH).hex -o $(OUT_DIR)/$(APP_FILENAME).app.$(VER_STRING_W_GITHASH).combined.hex
+	$(MERGEHEX) -m $(BUILD_DIR)/$(BL_SETTINGS).hex $(BUILD_DIR)/$(APP_FILENAME).app.$(VER_STRING_W_GITHASH).hex -o $(OUT_DIR)/$(APP_FILENAME).app.$(VER_STRING_W_GITHASH).combined.hex
 
 merge_all: merge
 	@echo Merging all files
-	mergehex -m $(SOFT_DEVICE) $(OUT_DIR)/$(APP_FILENAME).app.$(VER_STRING_W_GITHASH).combined.hex -o $(OUT_DIR)/$(APP_FILENAME).app.$(VER_STRING_W_GITHASH).full.hex
+	$(MERGEHEX) -m $(SOFT_DEVICE) $(OUT_DIR)/$(APP_FILENAME).app.$(VER_STRING_W_GITHASH).combined.hex -o $(OUT_DIR)/$(APP_FILENAME).app.$(VER_STRING_W_GITHASH).full.hex
 
 flash_all: merge_all
 	@echo Flashing all
-	nrfjprog -f nrf52 --program $(OUT_DIR)/$(APP_FILENAME).app.$(VER_STRING_W_GITHASH).full.hex --chiperase
-	nrfjprog -f nrf52 --reset
+	$(NRFJPROG) -f nrf52 --program $(OUT_DIR)/$(APP_FILENAME).app.$(VER_STRING_W_GITHASH).full.hex --chiperase
+	$(NRFJPROG) -f nrf52 --reset
 
 flash: merge
 	@echo Flashing firmware
-	nrfjprog -f nrf52 --program $(OUT_DIR)/$(APP_FILENAME).app.$(VER_STRING_W_GITHASH).combined.hex --sectorerase
-	nrfjprog -f nrf52 --reset
+	$(NRFJPROG) -f nrf52 --program $(OUT_DIR)/$(APP_FILENAME).app.$(VER_STRING_W_GITHASH).combined.hex --sectorerase
+	$(NRFJPROG) -f nrf52 --reset
 
 flash_softdevice:
 	@echo Flashing softdevice
-	nrfjprog -f nrf52 --program $(SOFT_DEVICE) --sectorerase
-	nrfjprog -f nrf52 --reset
+	$(NRFJPROG) -f nrf52 --program $(SOFT_DEVICE) --sectorerase
+	$(NRFJPROG) -f nrf52 --reset
 
 erase:
 	@echo Erasing device
-	nrfjprog -e
+	$(NRFJPROG) -e
 
 ota: build
 	@echo Generating OTA package
@@ -108,7 +112,7 @@ debug:
 	JLinkExe -device NRF52 -speed 4000 -if SWD -autoconnect 1
 
 sdk:
-	@echo Installing NRF SDK and Toolchain
+	@echo Installing NRF SDK
 	@if [ ! -d $(SDK_ROOT) ]; then \
 		if [ ! -f $(SDK_ZIP) ]; then \
 			echo Downloading sdk deps...; \
@@ -124,6 +128,15 @@ sdk:
 		mv $(SDK_TEMP)/$(NRF_SDK_FOLDER_NAME) $(SDK_ROOT); \
 		rmdir $(SDK_TEMP); \
 	fi; \
+	@echo Copyiing toolchain configuration file..
+	@cp -f $(SDK_CONFIG_DIR)/build_all.sh $(SDK_ROOT)/external/micro-ecc/
+	@cd $(SDK_ROOT)/external/micro-ecc/ && sh build_all.sh
+	@cp -f $(SDK_CONFIG_DIR)/Makefile.posix $(SDK_ROOT)/components/toolchain/gcc/
+	@echo SDK deps download and install complete.
+	@rm -rf $(SDK_ZIP) $(SDK_TEMP) $(GCC_ARCHIVE)
+
+tools_osx:
+	@echo Installing OSX tools
 	if [ ! -d $(TOOLCHAIN_DIR) ]; then \
 		if [ ! -f $(GCC_ARCHIVE) ]; then \
 			echo Downloading gcc...; \
@@ -140,12 +153,6 @@ sdk:
 			mv $(GCC_OUTPUT_FOLDER) $(TOOLCHAIN_DIR); \
 		fi; \
 	fi;
-	@echo Copyiing toolchain configuration file..
-	@cp -f $(SDK_CONFIG_DIR)/build_all.sh $(SDK_ROOT)/external/micro-ecc/
-	@cd $(SDK_ROOT)/external/micro-ecc/ && sh build_all.sh
-	@cp -f $(SDK_CONFIG_DIR)/Makefile.posix $(SDK_ROOT)/components/toolchain/gcc/
-	@echo SDK deps download and install complete.
-	@rm -rf $(SDK_ZIP) $(SDK_TEMP) $(GCC_ARCHIVE)
 
 %.pb: %.proto
 	protoc -I$(PROTO_DIR) --go_out=$(PROTO_DIR) $<
