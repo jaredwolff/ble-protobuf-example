@@ -18,6 +18,9 @@ SETTINGS        := settings
 BL_SETTINGS     := bl_settings
 BL_SETTINGS_SD  := bl_settings_sd
 
+# App filename
+APP_FILENAME    := protobuf
+
 # Get bootloader version
 BOOTLOADER_VER_STRING := $(shell cd bootloader; git describe --tags --abbrev=0)
 BOOTLOADER_VER_STRING_W_GITHASH := $(shell cd bootloader; git describe --tags --long)
@@ -43,7 +46,7 @@ SOFT_DEVICE := $(SDK_ROOT)/components/softdevice/s132/hex/s132_nrf52_6.1.0_softd
 PROTO_SRC   := $(wildcard $(PROTO_DIR)/*.proto)
 PROTO_PB    := $(PROTO_SRC:.proto=.pb)
 
-.PHONY: sdk sdk_clean clean build debug merge mergeall erase flash ota settings default genkey
+.PHONY: sdk sdk_clean clean build debug merge merge_all erase flash flash_all flash_softdevice ota settings default genkey
 
 default: build
 
@@ -59,6 +62,9 @@ settings: build
 build:
 	@export GCC_ARM_TOOLCHAIN=$(PROJ_DIR)/$(TOOLCHAIN_DIR) && make -C $(BOOTLOADER_DIR) -j
 	@export GCC_ARM_TOOLCHAIN=$(PROJ_DIR)/$(TOOLCHAIN_DIR) && make -C $(MAIN_DIR) -j
+	@mkdir -p $(BUILD_DIR)
+	@cp -f $(MAIN_DIR)/_build/nrf52832_xxaa.hex $(BUILD_DIR)/$(APP_FILENAME).app.$(VER_STRING_W_GITHASH).hex
+	@cp -f $(BOOTLOADER_DIR)/_build/nrf52832_xxaa_s132.hex $(BUILD_DIR)/$(APP_FILENAME).bootloader.$(VER_STRING_W_GITHASH).hex
 
 merge: settings
 	@echo Merging settings with bootloader
@@ -67,9 +73,14 @@ merge: settings
 	@mkdir -p $(OUT_DIR)
 	mergehex -m $(BUILD_DIR)/$(BL_SETTINGS).hex $(BUILD_DIR)/$(APP_FILENAME).app.$(VER_STRING_W_GITHASH).hex -o $(OUT_DIR)/$(APP_FILENAME).app.$(VER_STRING_W_GITHASH).combined.hex
 
-mergeall: merge
+merge_all: merge
 	@echo Merging all files
 	mergehex -m $(SOFT_DEVICE) $(OUT_DIR)/$(APP_FILENAME).app.$(VER_STRING_W_GITHASH).combined.hex -o $(OUT_DIR)/$(APP_FILENAME).app.$(VER_STRING_W_GITHASH).full.hex
+
+flash_all: merge_all
+	@echo Flashing all
+	nrfjprog -f nrf52 --program $(OUT_DIR)/$(APP_FILENAME).app.$(VER_STRING_W_GITHASH).full.hex --chiperase
+	nrfjprog -f nrf52 --reset
 
 flash: merge
 	@echo Flashing firmware
