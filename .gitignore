@@ -3,6 +3,7 @@ _sdk*
 _build/
 _ota
 _out
+_toolchain
 
 # Files
 *.pem
@@ -11,6 +12,7 @@ _out
 *.bin
 *.ipch
 *.pyc
+*.tar.bz2
 
 #Eclipse
 .project
