@@ -1,0 +1,19 @@
+# Folders
+_sdk*
+_build/
+_ota
+_out
+
+# Files
+*.pem
+.nrf_sdk.zip
+*.pb
+*.bin
+*.ipch
+*.pyc
+
+#Eclipse
+.project
+.cproject
+.settings*
+/Debug/
