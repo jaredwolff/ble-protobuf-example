@@ -13,10 +13,14 @@ PROTO_DIR       := ./proto
 BIN_DIR         := ./bin
 SOURCE_DIR      := ./src
 INCLUDE_DIR     := ./include
+EXTERNAL_DIR    := ./external
 
 SETTINGS        := settings
 BL_SETTINGS     := bl_settings
 BL_SETTINGS_SD  := bl_settings_sd
+
+NANOPB_DIR      := $(EXTERNAL_DIR)/nanopb
+NANOPB_GEN      := $(NANOPB_DIR)/generator/nanopb_generator.py
 
 # App filename
 APP_FILENAME    := protobuf
@@ -157,8 +161,10 @@ tools_osx:
 %.pb: %.proto
 	protoc -I$(PROTO_DIR) --go_out=$(PROTO_DIR) $<
 	protoc -I$(PROTO_DIR) -o$*.pb $<
-	@$(BIN_DIR)/protogen/nanopb_generator.py -I$(PROTO_DIR) $@
+	@$(NANOPB_GEN) -I$(PROTO_DIR) $@
 	pbjs -t static-module -p$(PROTO_DIR) $*.proto > $@.js
+	@mkdir -p $(SOURCE_DIR)/protobuf
+	@mkdir -p $(INCLUDE_DIR)/protobuf
 	@mv $*.pb.c $(SOURCE_DIR)/protobuf
 	@mv $*.pb.h $(INCLUDE_DIR)/protobuf
 
