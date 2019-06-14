@@ -3,6 +3,7 @@ SDK_TEMP        := ./_sdk_temp
 OTA_DIR         := ./_ota
 BUILD_DIR       := ./_build
 OUT_DIR         := ./_out
+TOOLCHAIN_DIR   := ./_toolchain
 DFU_DIR         := ./dfu
 SDK_CONFIG_DIR  := ./sdk_config
 MAIN_DIR        := ./main
@@ -28,6 +29,10 @@ SDK_ZIP     := .nrf_sdk.zip
 NRF_SDK_FOLDER_NAME := nRF5_SDK_15.2.0_9412b96
 NRF_SDK_URL := https://www.nordicsemi.com/-/media/Software-and-other-downloads/SDKs/nRF5/Binaries/nRF5SDK15209412b96.zip
 NRF_SDK_MD5 := 6677511a17f5247686fbec73093f4c0c
+GCC_ARCHIVE := .gcc-arm-none-eabi-6-2017-q2-update-mac.tar.bz2
+GCC_OUTPUT_FOLDER := gcc-arm-none-eabi-6-2017-q2-update
+GCC_URL := https://armkeil.blob.core.windows.net/developer/Files/downloads/gnu-rm/6-2017q2/gcc-arm-none-eabi-6-2017-q2-update-mac.tar.bz2
+GCC_MD5 := d536d7fb167c04b24f7f0d40cd739cac
 
 # Soft device info
 SOFT_DEVICE := $(SDK_ROOT)/components/softdevice/s132/hex/s132_nrf52_6.1.0_softdevice.hex
@@ -45,8 +50,8 @@ settings: build
 	nrfutil settings generate --family NRF52 --application $(BUILD_DIR)/$(APP_FILENAME).app.$(VER_STRING_W_GITHASH).hex --application-version-string $(VER_STRING) --bootloader-version 1 --bl-settings-version 1 $(BUILD_DIR)/$(SETTINGS).hex
 
 build:
-	@make -C $(BOOTLOADER_DIR) -j
-	@make -C $(MAIN_DIR) -j
+	@make -C $(BOOTLOADER_DIR) -j GCC_ARM_TOOLCHAIN=$(TOOLCHAIN_DIR)/bin/
+	@make -C $(MAIN_DIR) -j GCC_ARM_TOOLCHAIN=$(TOOLCHAIN_DIR)/bin/
 
 merge: settings
 	@echo Merging settings with bootloader
@@ -95,12 +100,26 @@ sdk:
 			echo SDK archive MD5 does not match. Delete and reinstall.; \
 			exit 1; \
 		fi; \
-		unzip $(SDK_ZIP) -d $(SDK_TEMP); \
-	fi; \
-	if ( -d $(SDK_ROOT)/$(NRF_SDK_FOLDER_NAME) ); then \
+		if [ ! -f $(SDK_TEMP) ]; then \
+			unzip $(SDK_ZIP) -d $(SDK_TEMP); \
+		fi; \
 		mv $(SDK_TEMP)/$(NRF_SDK_FOLDER_NAME) $(SDK_ROOT); \
-		rmdir $(SDK_TEMP)/$(NRF_SDK_FOLDER_NAME); \
+		rmdir $(SDK_TEMP); \
 	fi; \
+	if [ ! -f $(GCC_ARCHIVE) ]; then \
+		echo Downloading gcc...; \
+		curl -o $(GCC_ARCHIVE) $(GCC_URL); \
+	fi; \
+	if [ "`md5 -q $(GCC_ARCHIVE)`" != "$(GCC_MD5)" ]; then \
+		echo GCC archive MD5 does not match. Delete and reinstall.; \
+		exit 1; \
+	fi; \
+	if [ ! -d $(GCC_OUTPUT_FOLDER) ]; then \
+		tar jxfkv $(GCC_ARCHIVE); \
+	fi; \
+	if [ -d $(GCC_OUTPUT_FOLDER) ]; then \
+		mv $(GCC_OUTPUT_FOLDER) $(TOOLCHAIN_DIR); \
+	fi;
 	@echo Copyiing toolchain configuration file..
 	@cp -f $(SDK_CONFIG_DIR)/Makefile.posix $(SDK_ROOT)/components/toolchain/gcc/
 	@echo SDK deps download and install complete.
@@ -124,6 +143,7 @@ sdk_clean:
 		@echo SDK Clean..
 		@rm -rf $(SDK_ROOT)
 		@rm -f $(SDK_ZIP)
+		@rm -f $(GCC_ARCHIVE)
 
 clean:
 		@echo Cleaning..
