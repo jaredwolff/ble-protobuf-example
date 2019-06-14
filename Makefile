@@ -1,9 +1,11 @@
+PROJ_DIR				:= $(shell pwd)
 SDK_ROOT        := ./_sdk
 SDK_TEMP        := ./_sdk_temp
 OTA_DIR         := ./_ota
 BUILD_DIR       := ./_build
 OUT_DIR         := ./_out
 TOOLCHAIN_DIR   := ./_toolchain
+BOOTLOADER_DIR  := ./bootloader
 DFU_DIR         := ./dfu
 SDK_CONFIG_DIR  := ./sdk_config
 MAIN_DIR        := ./main
@@ -41,17 +43,22 @@ SOFT_DEVICE := $(SDK_ROOT)/components/softdevice/s132/hex/s132_nrf52_6.1.0_softd
 PROTO_SRC   := $(wildcard $(PROTO_DIR)/*.proto)
 PROTO_PB    := $(PROTO_SRC:.proto=.pb)
 
-.PHONY: sdk sdk_clean clean build debug merge mergeall erase flash ota settings default
+.PHONY: sdk sdk_clean clean build debug merge mergeall erase flash ota settings default genkey
 
 default: build
+
+genkey:
+	@echo Generating pem key. You should only run this once!
+	cd $(DFU_DIR) && nrfutil keys generate private.pem
+	cd $(DFU_DIR) && nrfutil keys display --key pk --format code private.pem > dfu_public_key.c
 
 settings: build
 	@echo Generating settings .hex file
 	nrfutil settings generate --family NRF52 --application $(BUILD_DIR)/$(APP_FILENAME).app.$(VER_STRING_W_GITHASH).hex --application-version-string $(VER_STRING) --bootloader-version 1 --bl-settings-version 1 $(BUILD_DIR)/$(SETTINGS).hex
 
 build:
-	@make -C $(BOOTLOADER_DIR) -j GCC_ARM_TOOLCHAIN=$(TOOLCHAIN_DIR)/bin/
-	@make -C $(MAIN_DIR) -j GCC_ARM_TOOLCHAIN=$(TOOLCHAIN_DIR)/bin/
+	@export GCC_ARM_TOOLCHAIN=$(PROJ_DIR)/$(TOOLCHAIN_DIR) && make -C $(BOOTLOADER_DIR) -j
+	@export GCC_ARM_TOOLCHAIN=$(PROJ_DIR)/$(TOOLCHAIN_DIR) && make -C $(MAIN_DIR) -j
 
 merge: settings
 	@echo Merging settings with bootloader
