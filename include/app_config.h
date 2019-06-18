@@ -1,0 +1,9 @@
+#ifndef SETUP_H
+#define SETUP_H
+
+#define BLE_PROTOBUF_ENABLED true
+#define BLE_PROTOBUF_CONFIG_LOG_ENABLED true
+#define BLE_PROTOBUF_BLE_OBSERVER_PRIO 2
+
+
+#endif //SETUP_H
