@@ -29,10 +29,6 @@ APP_FILENAME    := protobuf
 MERGEHEX				:= $(BIN_DIR)/mergehex/mergehex
 NRFJPROG				:= $(BIN_DIR)/nrfjprog/nrfjprog
 
-# Get bootloader version
-BOOTLOADER_VER_STRING := $(shell cd bootloader; git describe --tags --abbrev=0)
-BOOTLOADER_VER_STRING_W_GITHASH := $(shell cd bootloader; git describe --tags --long)
-
 # Get firmware version
 VER_STRING := $(shell git describe --tags --abbrev=0)
 VER_STRING_W_GITHASH := $(shell git describe --tags --long)
@@ -54,11 +50,11 @@ SOFT_DEVICE := $(SDK_ROOT)/components/softdevice/s132/hex/s132_nrf52_6.1.0_softd
 PROTO_SRC   := $(wildcard $(PROTO_DIR)/*.proto)
 PROTO_PB    := $(PROTO_SRC:.proto=.pb)
 
-.PHONY: sdk sdk_clean clean build debug merge merge_all erase flash flash_all flash_softdevice ota settings default genkey tools_osx
+.PHONY: sdk sdk_clean clean build debug merge merge_all erase flash flash_all flash_softdevice ota settings default gen_key tools_osx
 
 default: build
 
-genkey:
+gen_key:
 	@echo Generating pem key. You should only run this once!
 	cd $(DFU_DIR) && nrfutil keys generate private.pem
 	cd $(DFU_DIR) && nrfutil keys display --key pk --format code private.pem > dfu_public_key.c
@@ -76,7 +72,7 @@ build:
 
 merge: settings
 	@echo Merging settings with bootloader
-	$(MERGEHEX) -m $(BUILD_DIR)/$(APP_FILENAME).bootloader.$(BOOTLOADER_VER_STRING_W_GITHASH).hex $(BUILD_DIR)/$(SETTINGS).hex -o $(BUILD_DIR)/$(BL_SETTINGS).hex
+	$(MERGEHEX) -m $(BUILD_DIR)/$(APP_FILENAME).bootloader.$(VER_STRING_W_GITHASH).hex $(BUILD_DIR)/$(SETTINGS).hex -o $(BUILD_DIR)/$(BL_SETTINGS).hex
 	@echo Merging app with bootloader + settings
 	@mkdir -p $(OUT_DIR)
 	$(MERGEHEX) -m $(BUILD_DIR)/$(BL_SETTINGS).hex $(BUILD_DIR)/$(APP_FILENAME).app.$(VER_STRING_W_GITHASH).hex -o $(OUT_DIR)/$(APP_FILENAME).app.$(VER_STRING_W_GITHASH).combined.hex
