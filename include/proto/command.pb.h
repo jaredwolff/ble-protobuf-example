@@ -26,14 +26,14 @@ typedef enum _event_event_type {
 /* Struct definitions */
 typedef struct _event {
     event_event_type type;
-    pb_callback_t message;
+    char message[64];
 /* @@protoc_insertion_point(struct:event) */
 } event;
 
 
 /* Initializer values for message structs */
-#define event_init_default                       {_event_event_type_MIN, {{NULL}, NULL}}
-#define event_init_zero                          {_event_event_type_MIN, {{NULL}, NULL}}
+#define event_init_default                       {_event_event_type_MIN, ""}
+#define event_init_zero                          {_event_event_type_MIN, ""}
 
 /* Field tags (for use in manual encoding/decoding) */
 #define event_type_tag                           1
@@ -42,8 +42,8 @@ typedef struct _event {
 /* Struct field encoding specification for nanopb */
 #define event_FIELDLIST(X, a) \
 X(a, STATIC, SINGULAR, UENUM, type, 1) \
-X(a, CALLBACK, SINGULAR, STRING, message, 2)
-#define event_CALLBACK pb_default_field_callback
+X(a, STATIC, SINGULAR, STRING, message, 2)
+#define event_CALLBACK NULL
 #define event_DEFAULT NULL
 
 extern const pb_msgdesc_t event_msg;
@@ -52,7 +52,7 @@ extern const pb_msgdesc_t event_msg;
 #define event_fields &event_msg
 
 /* Maximum encoded size of messages (where known) */
-/* event_size depends on runtime parameters */
+#define event_size                               67
 
 #ifdef __cplusplus
 } /* extern "C" */

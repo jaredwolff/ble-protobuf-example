@@ -46,15 +46,6 @@
  * @brief Protobuf Service module.
  *
  * @details This module implements the Protobuf Service with the Command characteristic.
- *          During initialization it adds the Protobuf Service and Command characteristic
- *          to the BLE stack database. Optionally it can also add a Report Reference descriptor
- *          to the Command characteristic (used when including the Protobuf Service in
- *          the HID service).
- *
- *          If specified, the module will support notification of the Command characteristic
- *          through the ble_protobuf_command_update() function.
- *          If an event handler is supplied by the application, the Protobuf Service will
- *          generate Protobuf Service events to the application.
  *
  * @note    The application must register this module as BLE event observer using the
  *          NRF_SDH_BLE_OBSERVER macro. Example:
@@ -64,9 +55,6 @@
  *                                   ble_protobuf_on_ble_evt, &instance);
  *          @endcode
  *
- * @note Attention!
- *  To maintain compliance with Nordic Semiconductor ASA Bluetooth profile
- *  qualification listings, this section of source code must not be modified.
  */
 #ifndef BLE_PROTOBUF_H__
 #define BLE_PROTOBUF_H__
@@ -124,7 +112,6 @@ typedef void (* ble_protobuf_evt_handler_t) (ble_protobuf_t * p_protobuf, ble_pr
 typedef struct
 {
     ble_protobuf_evt_handler_t  evt_handler;                    /**< Event handler to be called for handling events in the Protobuf Service. */
-    bool                   support_notification;           /**< TRUE if notification of Command measurement is supported. */
     ble_srv_report_ref_t * p_report_ref;                   /**< If not NULL, a Report Reference descriptor with the specified value will be added to the Command characteristic */
     security_req_t         bl_rd_sec;                      /**< Security requirement for reading the BL characteristic value. */
     security_req_t         bl_cccd_wr_sec;                 /**< Security requirement for writing the BL characteristic CCCD. */
@@ -135,11 +122,9 @@ typedef struct
 struct ble_protobuf_s
 {
     ble_protobuf_evt_handler_t    evt_handler;               /**< Event handler to be called for handling events in the Protobuf Service. */
-    uint16_t                 service_handle;            /**< Handle of Protobuf Service (as provided by the BLE stack). */
-    ble_gatts_char_handles_t command_handles;           /**< Handles related to the Command characteristic. */
-    uint16_t                 report_ref_handle;         /**< Handle of the Report Reference descriptor. */
-    bool                     is_notification_supported; /**< TRUE if notification of Command is supported. */
-    uint8_t                  uuid_type;                 /**< UUID type for the Protobuf Service. */
+    uint16_t                      service_handle;            /**< Handle of Protobuf Service (as provided by the BLE stack). */
+    ble_gatts_char_handles_t      command_handles;           /**< Handles related to the Command characteristic. */
+    uint8_t                       uuid_type;                 /**< UUID type for the Protobuf Service. */
 };
 
 

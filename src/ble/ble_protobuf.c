@@ -49,6 +49,7 @@
 #include "ble_srv_common.h"
 #include "ble_conn_state.h"
 #include "pb_decode.h"
+#include "pb_encode.h"
 #include "command.pb.h"
 
 #define NRF_LOG_MODULE_NAME ble_protobuf
@@ -69,18 +70,16 @@ NRF_LOG_MODULE_REGISTER();
  */
 static void on_write(ble_protobuf_t * p_protobuf, ble_evt_t const * p_ble_evt)
 {
-
     ble_gatts_evt_write_t const * p_evt_write = &p_ble_evt->evt.gatts_evt.params.write;
-
 
     // Handle writning to the value handle
     if ( p_evt_write->handle == p_protobuf->command_handles.value_handle )
     {
 
-        NRF_LOG_INFO("value");
-
         // Setitng up protocol buffer data
         event evt;
+
+        // NRF_LOG_HEXDUMP_INFO(p_evt_write->data,p_evt_write->len);
 
         // Read in buffer
         pb_istream_t istream = pb_istream_from_buffer((pb_byte_t *)p_evt_write->data, p_evt_write->len);
@@ -90,46 +89,60 @@ static void on_write(ble_protobuf_t * p_protobuf, ble_evt_t const * p_ble_evt)
         return;
     }
 
-        // TODO: Validate code
-        // TODO: Check type
-        // TODO: if all valid, append message with a return value
-        // TODO: encode value
-        // TODO: save to char
-        // TODO: also push to notification
-
+        // Validate code & type
+        if( evt.type != event_event_type_command ) {
+            return;
     }
 
-    // Handling of enabling notifications
-    if (    (p_evt_write->handle == p_protobuf->command_handles.cccd_handle)
-        &&  (p_evt_write->len == 2))
-    {
-        NRF_LOG_INFO("cccd");
+        // If all valid, append message with a return value
+        char out[64];
 
-        if (!p_protobuf->is_notification_supported)
-        {
+        // Concat strings together
+        strcpy(out,evt.message);
+        strcat(out," cool."); // <- This is part of the response. It get's concatenated to the "This is " from the javascript app.
+
+        // Copy to message
+        strcpy(evt.message,out);
+
+        // Set response
+        evt.type = event_event_type_response;
+
+        // Encode value
+        pb_byte_t output[event_size];
+
+        // Output buffer
+        pb_ostream_t ostream = pb_ostream_from_buffer(output,sizeof(output));
+
+        if (!pb_encode(&ostream, event_fields, &evt)) {
+            NRF_LOG_ERROR("Unable to encode: %s", PB_GET_ERROR(&ostream));
             return;
         }
 
-        if (p_protobuf->evt_handler == NULL)
-        {
-            return;
-        }
+        // NRF_LOG_HEXDUMP_INFO(output,ostream.bytes_written);
 
-        ble_protobuf_evt_t evt;
+        // Initialize value struct.
+        ble_gatts_value_t  gatts_value;
+        memset(&gatts_value, 0, sizeof(gatts_value));
 
-        if (ble_srv_is_notification_enabled(p_evt_write->data))
+        gatts_value.len     = ostream.bytes_written;
+        gatts_value.offset  = 0;
+        gatts_value.p_value = output;
+
+        // Update database.
+        uint32_t err_code = sd_ble_gatts_value_set(BLE_CONN_HANDLE_INVALID,
+                                          p_protobuf->command_handles.value_handle,
+                                          &gatts_value);
+        if (err_code == NRF_SUCCESS)
         {
-            evt.evt_type = BLE_PROTOBUF_EVT_NOTIFICATION_ENABLED;
+            NRF_LOG_INFO("Response has ben sent.")
         }
         else
         {
-            evt.evt_type = BLE_PROTOBUF_EVT_NOTIFICATION_DISABLED;
+            NRF_LOG_DEBUG("Error sending response.")
         }
-        evt.conn_handle = p_ble_evt->evt.gatts_evt.conn_handle;
 
-        // CCCD written, call application event handler.
-        p_protobuf->evt_handler(p_protobuf, &evt);
     }
+
 }
 
 
@@ -166,19 +179,20 @@ static ret_code_t command_char_add(ble_protobuf_t * p_protobuf, const ble_protob
 {
     ret_code_t             err_code;
     ble_add_char_params_t  add_char_params;
-    ble_add_descr_params_t add_descr_params;
-    uint8_t                init_len;
-    uint8_t                encoded_report_ref[BLE_SRV_ENCODED_REPORT_REF_LEN];
 
     memset(&add_char_params, 0, sizeof(add_char_params));
-    add_char_params.uuid              = PROTOBUF_UUID_CONFIG_CHAR;
-    add_char_params.max_len           = _event_event_type_MAX;
-    add_char_params.init_len          = 0;
-    add_char_params.p_init_value      = NULL;
-    add_char_params.char_props.notify = p_protobuf->is_notification_supported;
-    add_char_params.char_props.read   = 1;
-    add_char_params.cccd_write_access = p_protobuf_init->bl_cccd_wr_sec;
-    add_char_params.read_access       = p_protobuf_init->bl_rd_sec;
+
+    add_char_params.uuid                      = PROTOBUF_UUID_CONFIG_CHAR;
+    add_char_params.max_len                   = event_size;
+    add_char_params.is_var_len                = true;
+
+    add_char_params.char_props.write_wo_resp  = 1;
+    add_char_params.char_props.write          = 1;
+    add_char_params.char_props.read           = 1;
+
+    add_char_params.cccd_write_access         = SEC_OPEN;
+    add_char_params.read_access               = SEC_OPEN;
+    add_char_params.write_access              = SEC_OPEN;
 
     err_code = characteristic_add(p_protobuf->service_handle,
                                   &add_char_params,
@@ -188,27 +202,6 @@ static ret_code_t command_char_add(ble_protobuf_t * p_protobuf, const ble_protob
         return err_code;
     }
 
-    if (p_protobuf_init->p_report_ref != NULL)
-    {
-        // Add Report Reference descriptor
-        init_len = ble_srv_report_ref_encode(encoded_report_ref, p_protobuf_init->p_report_ref);
-
-        memset(&add_descr_params, 0, sizeof(add_descr_params));
-        add_descr_params.uuid        = BLE_UUID_REPORT_REF_DESCR;
-        add_descr_params.read_access = p_protobuf_init->bl_report_rd_sec;
-        add_descr_params.init_len    = init_len;
-        add_descr_params.max_len     = add_descr_params.init_len;
-        add_descr_params.p_value     = encoded_report_ref;
-
-        err_code = descriptor_add(p_protobuf->command_handles.value_handle,
-                                  &add_descr_params,
-                                  &p_protobuf->report_ref_handle);
-        return err_code;
-    }
-    else
-    {
-        p_protobuf->report_ref_handle = BLE_GATT_HANDLE_INVALID;
-    }
 
     return NRF_SUCCESS;
 }
@@ -227,7 +220,6 @@ ret_code_t ble_protobuf_init(ble_protobuf_t * p_protobuf, const ble_protobuf_ini
 
     // Initialize service structure
     p_protobuf->evt_handler               = p_protobuf_init->evt_handler;
-    p_protobuf->is_notification_supported = p_protobuf_init->support_notification;
 
     // Add service
     err_code = sd_ble_uuid_vs_add(&base_uuid, &p_protobuf->uuid_type);
@@ -241,32 +233,6 @@ ret_code_t ble_protobuf_init(ble_protobuf_t * p_protobuf, const ble_protobuf_ini
 
     // Add battery level characteristic
     err_code = command_char_add(p_protobuf, p_protobuf_init);
-    return err_code;
-}
-
-// TODO: setup reply using notification, also write value using protobuf
-
-/**@brief Function for sending notifications with the Battery Level characteristic.
- *
- * @param[in]   p_hvx_params Pointer to structure with notification data.
- * @param[in]   conn_handle  Connection handle.
- *
- * @return      NRF_SUCCESS on success, otherwise an error code.
- */
-static ret_code_t notification_send(ble_gatts_hvx_params_t * const p_hvx_params,
-                                            uint16_t                       conn_handle)
-{
-    ret_code_t err_code = sd_ble_gatts_hvx(conn_handle, p_hvx_params);
-    if (err_code == NRF_SUCCESS)
-    {
-        NRF_LOG_INFO("Battery notification has been sent using conn_handle: 0x%04X", conn_handle);
-    }
-    else
-    {
-        NRF_LOG_DEBUG("Error: 0x%08X while sending notification with conn_handle: 0x%04X",
-                      err_code,
-                      conn_handle);
-    }
     return err_code;
 }
 
