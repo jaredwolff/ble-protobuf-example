@@ -48,7 +48,7 @@ It may look foreign at first but once you take a deeper look, it’s not that mu
 
 I'm using two types of data in this example: a `string` and `enum` as a type. There are actually a few more which you can read up at the [documentation](https://developers.google.com/protocol-buffers/docs/proto). When compiled, the equivalent c struct looks like:
 
-```
+```c
 /* Struct definitions */
 typedef struct _event {
     event_event_type type;
@@ -59,7 +59,7 @@ typedef struct _event {
 
 Where `event_event_type` is
 
-```
+```c
 /* Enum definitions */
 typedef enum _event_event_type {
     event_event_type_command = 0,
