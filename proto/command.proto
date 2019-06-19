@@ -1,1 +1,11 @@
 syntax = "proto3";
+
+
+message event {
+  enum event_type {
+    command = 0;
+    response = 1;
+  }
+  event_type type = 1;
+  string message = 2;
+}

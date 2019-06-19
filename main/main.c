@@ -86,6 +86,7 @@
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
 #include "nrf_bootloader_info.h"
+#include "ble_protobuf.h"
 
 #define DEVICE_NAME                     "Nordic_Buttonless"                         /**< Name of device. Will be included in the advertising data. */
 #define MANUFACTURER_NAME               "NordicSemiconductor"                       /**< Manufacturer. Will be passed to Device Information Service. */
@@ -119,12 +120,13 @@
 NRF_BLE_GATT_DEF(m_gatt);                                                           /**< GATT module instance. */
 NRF_BLE_QWR_DEF(m_qwr);                                                             /**< Context for the Queued Write module.*/
 BLE_ADVERTISING_DEF(m_advertising);                                                 /**< Advertising module instance. */
+BLE_PROTOBUF_DEF(m_protobuf);                                                       /**< Protobuf module instance. */
 
 static uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID;                            /**< Handle of the current connection. */
 static void advertising_start(bool erase_bonds);                                    /**< Forward declaration of advertising start function */
 
 // YOUR_JOB: Use UUIDs for service(s) used in your application.
-static ble_uuid_t m_adv_uuids[] = {{BLE_UUID_DEVICE_INFORMATION_SERVICE, BLE_UUID_TYPE_BLE}};
+static ble_uuid_t m_adv_uuids[] = {{BLE_UUID_DEVICE_INFORMATION_SERVICE, BLE_UUID_TYPE_BLE},{PROTOBUF_UUID_SERVICE, BLE_UUID_TYPE_BLE}};
 
 /**@brief Handler for shutdown preparation.
  *
@@ -405,14 +407,21 @@ static void nrf_qwr_error_handler(uint32_t nrf_error)
     }
    }*/
 
+/**@brief Function for forwarding protobuf data from the BLE portion of things
+ */
+void ble_protobuf_evt_hanlder (ble_protobuf_t * p_protobuf, ble_protobuf_evt_t * p_evt) {
+
+}
+
 
 /**@brief Function for initializing services that will be used by the application.
  */
 static void services_init(void)
 {
     uint32_t                  err_code;
-    nrf_ble_qwr_init_t        qwr_init  = {0};
-    ble_dfu_buttonless_init_t dfus_init = {0};
+    nrf_ble_qwr_init_t        qwr_init      = {0};
+    ble_dfu_buttonless_init_t dfus_init     = {0};
+    ble_protobuf_init_t       protobuf_init = {0};
 
     // Initialize Queued Write Module.
     qwr_init.error_handler = nrf_qwr_error_handler;
@@ -424,6 +433,16 @@ static void services_init(void)
 
     err_code = ble_dfu_buttonless_init(&dfus_init);
     APP_ERROR_CHECK(err_code);
+
+    protobuf_init.evt_handler          = ble_protobuf_evt_hanlder;
+    protobuf_init.support_notification = true;
+    protobuf_init.bl_rd_sec            = SEC_JUST_WORKS;
+    protobuf_init.bl_cccd_wr_sec       = SEC_JUST_WORKS;
+    protobuf_init.bl_report_rd_sec     = SEC_JUST_WORKS;
+
+    err_code = ble_protobuf_init(&m_protobuf,&protobuf_init);
+    APP_ERROR_CHECK(err_code);
+
 
     /* YOUR_JOB: Add code to initialize the services used by the application.
        uint32_t                           err_code;

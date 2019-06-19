@@ -18,11 +18,90 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
-func init() { proto.RegisterFile("command.proto", fileDescriptor_command_00e3471b468ed2a7) }
+type EventEventType int32
 
-var fileDescriptor_command_00e3471b468ed2a7 = []byte{
-	// 44 bytes of a gzipped FileDescriptorProto
+const (
+	Event_command  EventEventType = 0
+	Event_response EventEventType = 1
+)
+
+var EventEventType_name = map[int32]string{
+	0: "command",
+	1: "response",
+}
+var EventEventType_value = map[string]int32{
+	"command":  0,
+	"response": 1,
+}
+
+func (x EventEventType) String() string {
+	return proto.EnumName(EventEventType_name, int32(x))
+}
+func (EventEventType) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_command_3dc27ceb94e23c2c, []int{0, 0}
+}
+
+type Event struct {
+	Type                 EventEventType `protobuf:"varint,1,opt,name=type,proto3,enum=EventEventType" json:"type,omitempty"`
+	Message              string         `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
+	XXX_unrecognized     []byte         `json:"-"`
+	XXX_sizecache        int32          `json:"-"`
+}
+
+func (m *Event) Reset()         { *m = Event{} }
+func (m *Event) String() string { return proto.CompactTextString(m) }
+func (*Event) ProtoMessage()    {}
+func (*Event) Descriptor() ([]byte, []int) {
+	return fileDescriptor_command_3dc27ceb94e23c2c, []int{0}
+}
+func (m *Event) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Event.Unmarshal(m, b)
+}
+func (m *Event) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Event.Marshal(b, m, deterministic)
+}
+func (dst *Event) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Event.Merge(dst, src)
+}
+func (m *Event) XXX_Size() int {
+	return xxx_messageInfo_Event.Size(m)
+}
+func (m *Event) XXX_DiscardUnknown() {
+	xxx_messageInfo_Event.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Event proto.InternalMessageInfo
+
+func (m *Event) GetType() EventEventType {
+	if m != nil {
+		return m.Type
+	}
+	return Event_command
+}
+
+func (m *Event) GetMessage() string {
+	if m != nil {
+		return m.Message
+	}
+	return ""
+}
+
+func init() {
+	proto.RegisterType((*Event)(nil), "event")
+	proto.RegisterEnum("EventEventType", EventEventType_name, EventEventType_value)
+}
+
+func init() { proto.RegisterFile("command.proto", fileDescriptor_command_3dc27ceb94e23c2c) }
+
+var fileDescriptor_command_3dc27ceb94e23c2c = []byte{
+	// 127 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x4d, 0xce, 0xcf, 0xcd,
-	0x4d, 0xcc, 0x4b, 0xd1, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x4f, 0x62, 0x03, 0x53, 0xc6, 0x80, 0x00,
-	0x00, 0x00, 0xff, 0xff, 0x0f, 0x9f, 0xe4, 0x94, 0x17, 0x00, 0x00, 0x00,
+	0x4d, 0xcc, 0x4b, 0xd1, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x57, 0x2a, 0xe4, 0x62, 0x4d, 0x2d, 0x4b,
+	0xcd, 0x2b, 0x11, 0x52, 0xe5, 0x62, 0x29, 0xa9, 0x2c, 0x48, 0x95, 0x60, 0x54, 0x60, 0xd4, 0xe0,
+	0x33, 0x12, 0xd4, 0x03, 0x8b, 0x42, 0xc8, 0x78, 0x90, 0x44, 0x10, 0x58, 0x5a, 0x48, 0x82, 0x8b,
+	0x3d, 0x37, 0xb5, 0xb8, 0x38, 0x31, 0x3d, 0x55, 0x82, 0x49, 0x81, 0x51, 0x83, 0x33, 0x08, 0xc6,
+	0x55, 0x52, 0xe7, 0xe2, 0x42, 0xa8, 0x16, 0xe2, 0xe6, 0x62, 0x87, 0x5a, 0x24, 0xc0, 0x20, 0xc4,
+	0xc3, 0xc5, 0x51, 0x94, 0x5a, 0x5c, 0x90, 0x9f, 0x57, 0x9c, 0x2a, 0xc0, 0x98, 0xc4, 0x06, 0xb6,
+	0xd9, 0x18, 0x10, 0x00, 0x00, 0xff, 0xff, 0xc1, 0x57, 0x79, 0x58, 0x8a, 0x00, 0x00, 0x00,
 }

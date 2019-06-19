@@ -82,7 +82,10 @@ SRC_FILES += \
   $(SDK_ROOT)/components/softdevice/common/nrf_sdh.c \
   $(SDK_ROOT)/components/softdevice/common/nrf_sdh_ble.c \
   $(SDK_ROOT)/components/softdevice/common/nrf_sdh_soc.c \
-  $(PROJ_DIR)/../src/protobuf/command.pb.c \
+  $(PROJ_DIR)/../src/proto/command.pb.c \
+  $(PROJ_DIR)/../external/nanopb/pb_common.c \
+  $(PROJ_DIR)/../external/nanopb/pb_encode.c \
+  $(PROJ_DIR)/../external/nanopb/pb_decode.c \
   $(PROJ_DIR)/../src/ble/ble_protobuf.c \
 
 # Include folders common to all targets
@@ -134,8 +137,9 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/libraries/svc \
   $(SDK_ROOT)/components/libraries/log/src \
   $(PROJ_DIR)/../include/ \
-  $(PROJ_DIR)/../include/protobuf \
+  $(PROJ_DIR)/../include/proto \
   $(PROJ_DIR)/../include/ble \
+  $(PROJ_DIR)/../external/nanopb \
 
 # Libraries common to all targets
 LIB_FILES += \
@@ -147,6 +151,7 @@ OPT = -Os -g3
 
 # C flags common to all targets
 CFLAGS += $(OPT)
+CFLAGS += -DDEBUG
 CFLAGS += -DUSE_APP_CONFIG
 CFLAGS += -DBL_SETTINGS_ACCESS_ONLY
 CFLAGS += -DBOARD_PCA10040

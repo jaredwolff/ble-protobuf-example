@@ -81,6 +81,12 @@
 extern "C" {
 #endif
 
+// UUID for the Service & Char
+#define PROTOBUF_UUID_BASE   {0x72, 0x09, 0x1a, 0xb3, 0x5f, 0xff, 0x4d, 0xf6, \
+                               0x80, 0x62, 0x45, 0x8d, 0x00, 0x00, 0x00, 0x00}
+#define PROTOBUF_UUID_SERVICE     0xf510
+#define PROTOBUF_UUID_CONFIG_CHAR (PROTOBUF_UUID_SERVICE + 1)
+
 /**@brief Macro for defining a ble_protobuf instance.
  *
  * @param   _name  Name of the instance.
@@ -133,6 +139,7 @@ struct ble_protobuf_s
     ble_gatts_char_handles_t command_handles;           /**< Handles related to the Command characteristic. */
     uint16_t                 report_ref_handle;         /**< Handle of the Report Reference descriptor. */
     bool                     is_notification_supported; /**< TRUE if notification of Command is supported. */
+    uint8_t                  uuid_type;                 /**< UUID type for the Protobuf Service. */
 };
 
 

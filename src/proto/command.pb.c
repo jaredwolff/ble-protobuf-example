@@ -8,5 +8,9 @@
 #error Regenerate this file with the current version of nanopb generator.
 #endif
 
+PB_BIND(event, event, AUTO)
+
+
+
 
 /* @@protoc_insertion_point(eof) */

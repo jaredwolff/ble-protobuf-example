@@ -48,6 +48,8 @@
 #include <string.h>
 #include "ble_srv_common.h"
 #include "ble_conn_state.h"
+#include "pb_decode.h"
+#include "command.pb.h"
 
 #define NRF_LOG_MODULE_NAME ble_protobuf
 #if BLE_PROTOBUF_CONFIG_LOG_ENABLED
@@ -67,16 +69,47 @@ NRF_LOG_MODULE_REGISTER();
  */
 static void on_write(ble_protobuf_t * p_protobuf, ble_evt_t const * p_ble_evt)
 {
-    if (!p_protobuf->is_notification_supported)
-    {
-        return;
-    }
 
     ble_gatts_evt_write_t const * p_evt_write = &p_ble_evt->evt.gatts_evt.params.write;
 
+
+    // Handle writning to the value handle
+    if ( p_evt_write->handle == p_protobuf->command_handles.value_handle )
+    {
+
+        NRF_LOG_INFO("value");
+
+        // Setitng up protocol buffer data
+        event evt;
+
+        // Read in buffer
+        pb_istream_t istream = pb_istream_from_buffer((pb_byte_t *)p_evt_write->data, p_evt_write->len);
+
+        if (!pb_decode(&istream, event_fields, &evt)) {
+            NRF_LOG_ERROR("Unable to decode: %s", PB_GET_ERROR(&istream));
+        return;
+    }
+
+        // TODO: Validate code
+        // TODO: Check type
+        // TODO: if all valid, append message with a return value
+        // TODO: encode value
+        // TODO: save to char
+        // TODO: also push to notification
+
+    }
+
+    // Handling of enabling notifications
     if (    (p_evt_write->handle == p_protobuf->command_handles.cccd_handle)
         &&  (p_evt_write->len == 2))
     {
+        NRF_LOG_INFO("cccd");
+
+        if (!p_protobuf->is_notification_supported)
+        {
+            return;
+        }
+
         if (p_protobuf->evt_handler == NULL)
         {
             return;
@@ -138,10 +171,10 @@ static ret_code_t command_char_add(ble_protobuf_t * p_protobuf, const ble_protob
     uint8_t                encoded_report_ref[BLE_SRV_ENCODED_REPORT_REF_LEN];
 
     memset(&add_char_params, 0, sizeof(add_char_params));
-    add_char_params.uuid              = BLE_UUID_BATTERY_LEVEL_CHAR;
-    add_char_params.max_len           = sizeof(uint8_t);
-    add_char_params.init_len          = sizeof(uint8_t);
-    add_char_params.p_init_value      = &; // TODO:
+    add_char_params.uuid              = PROTOBUF_UUID_CONFIG_CHAR;
+    add_char_params.max_len           = _event_event_type_MAX;
+    add_char_params.init_len          = 0;
+    add_char_params.p_init_value      = NULL;
     add_char_params.char_props.notify = p_protobuf->is_notification_supported;
     add_char_params.char_props.read   = 1;
     add_char_params.cccd_write_access = p_protobuf_init->bl_cccd_wr_sec;
@@ -190,13 +223,18 @@ ret_code_t ble_protobuf_init(ble_protobuf_t * p_protobuf, const ble_protobuf_ini
 
     ret_code_t err_code;
     ble_uuid_t ble_uuid;
+    ble_uuid128_t base_uuid = {PROTOBUF_UUID_BASE};
 
     // Initialize service structure
     p_protobuf->evt_handler               = p_protobuf_init->evt_handler;
     p_protobuf->is_notification_supported = p_protobuf_init->support_notification;
 
     // Add service
-    BLE_UUID_BLE_ASSIGN(ble_uuid, BLE_UUID_BATTERY_SERVICE);
+    err_code = sd_ble_uuid_vs_add(&base_uuid, &p_protobuf->uuid_type);
+    VERIFY_SUCCESS(err_code);
+
+    ble_uuid.type = p_protobuf->uuid_type;
+    ble_uuid.uuid = PROTOBUF_UUID_SERVICE;
 
     err_code = sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY, &ble_uuid, &p_protobuf->service_handle);
     VERIFY_SUCCESS(err_code);
