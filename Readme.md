@@ -27,8 +27,84 @@ This repository is also a great starting point for developing a Bluetooth Low En
 
 ## Creating your own Protocol Buffer
 
+### The `.proto` and `.options` files
+
+Create a file called `command.proto`. You can make the contents of that file what's below:
+
+```
+syntax = "proto3";
+
+message event {
+  enum event_type {
+    command = 0;
+    response = 1;
+  }
+  event_type type = 1;
+  string message = 2;
+}
+```
+
+It may look foreign at first but once you take a deeper look, it’s not that much different than a standard C struct or hash table.
+
+I'm using two types of data in this example: a `string` and `enum` as a type. There are actually a few more which you can read up at the [documentation](https://developers.google.com/protocol-buffers/docs/proto). When compiled, the equivalent c struct looks like:
+
+```
+/* Struct definitions */
+typedef struct _event {
+    event_event_type type;
+    char message[64];
+/* @@protoc_insertion_point(struct:event) */
+} event;
+```
+
+Where `event_event_type` is
+
+```
+/* Enum definitions */
+typedef enum _event_event_type {
+    event_event_type_command = 0,
+    event_event_type_response = 1
+} event_event_type;
+```
+
+You can nest as many messages inside each other as your hearts content. Typically though, a message is as small as possible so data transmission is as efficient as possible. This is particularly important for resource constrained systems or LTE deployments where you're charged for *every* megabyte used. **Note:** when elements are not used or defined they are typically *not* included in the encoded Protocol Buffer payload.
+
+Normally, when you create a generic message like this, there is no limit to the size of the string `message`. That option can be set in the `.options` file:
+
+```
+event.message	max_size:64
+```
+
+This way, the memory can be statically allocated in my microprocessor code at compile time. If the message size is greater than 64 bytes then it will get chopped off in the code (or you'll simply get an error during decode). It's up to you, the software engineer, to figure out the absolute maximum amount of bytes  (or characters) that you may need for this type of data.
+
+You can look at more of the `nanopb` related features at [their documentation.](https://jpa.kapsi.fi/nanopb/docs/concepts.html)
+
+### Compiling the `.proto` and `.options` files
+
+Using this repository, it's as simple as running `make protobuf`. The files can be individually compiled as well:
+
+If we want to generate a static Go file the command looks like:
+
+```bash
+protoc -I<directory with .proto> --go_out=<output directory> command.proto
+```
+If you've installed the nanopb plugin, you can do something similar to generate C code:
+
+```bash
+protoc -I<directory with .proto> -ocommand.pb command.proto
+<path>/<to>/protogen/nanopb_generator.py -I<directory with .proto> command
+```
+The first file creates a generic "object" file. The second actually creates the static C library.
+
+For javascript:
+
+```bash
+pbjs -t static-module -p<directory with .proto> command.proto > command.pb.js
+```
+
 ## Creating your own Service
 
+*Coming in Part 2!*
 
 ## License
 
