@@ -6,14 +6,16 @@ This example requires use of the NRF52 development kit. If you have no idea what
 
 This repository is also a great starting point for developing a Bluetooth Low Energy project that needs OTA DFU.
 
+Note: use this repository in conjunction with the [Javascript test app.](https://bitbucket.org/jaredwolff/ble-protobuf-js/)
+
 ## Setup for OSX (tested)
 
 1. Initialize the full repository (there are submodules!): `git submodule update --init`
-1. Install `protoc` using Homebrew: `brew install protobuf`
-2. Run `make sdk`. This will download your SDK files.
-3. Run `make tools_osx`. This will download your ARMGCC toolchain (for Mac). For other environments see below.
-4. Run `make gen_key` once (and only once)! This will set up your key for DFU.
-5. Run `make` and this will build your bootloader and main app.
+2. Install `protoc` using Homebrew: `brew install protobuf`
+3. Run `make sdk`. This will download your SDK files.
+4. Run `make tools_osx`. This will download your ARMGCC toolchain (for Mac). For other environments see below.
+5. Run `make gen_key` once (and only once)! This will set up your key for DFU.
+6. Run `make` and this will build your bootloader and main app.
 6. Run `make flash_all` to flash the whole app to your NRF52 Development Kit.
 
 ## Setup for other platforms
