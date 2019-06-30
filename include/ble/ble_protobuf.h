@@ -112,10 +112,9 @@ typedef void (* ble_protobuf_evt_handler_t) (ble_protobuf_t * p_protobuf, ble_pr
 typedef struct
 {
     ble_protobuf_evt_handler_t  evt_handler;                    /**< Event handler to be called for handling events in the Protobuf Service. */
-    ble_srv_report_ref_t * p_report_ref;                   /**< If not NULL, a Report Reference descriptor with the specified value will be added to the Command characteristic */
     security_req_t         bl_rd_sec;                      /**< Security requirement for reading the BL characteristic value. */
     security_req_t         bl_cccd_wr_sec;                 /**< Security requirement for writing the BL characteristic CCCD. */
-    security_req_t         bl_report_rd_sec;               /**< Security requirement for reading the BL characteristic descriptor. */
+    security_req_t         bl_wr_sec;                      /**< Security requirement for writing the BL characteristic value */
 } ble_protobuf_init_t;
 
 /**@brief Protobuf Service structure. This contains various status information for the service. */

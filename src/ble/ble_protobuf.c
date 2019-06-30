@@ -190,9 +190,9 @@ static ret_code_t command_char_add(ble_protobuf_t * p_protobuf, const ble_protob
     add_char_params.char_props.write          = 1;
     add_char_params.char_props.read           = 1;
 
-    add_char_params.cccd_write_access         = SEC_OPEN;
-    add_char_params.read_access               = SEC_OPEN;
-    add_char_params.write_access              = SEC_OPEN;
+    add_char_params.cccd_write_access         = p_protobuf_init->bl_cccd_wr_sec;
+    add_char_params.read_access               = p_protobuf_init->bl_rd_sec;
+    add_char_params.write_access              = p_protobuf_init->bl_wr_sec;
 
     err_code = characteristic_add(p_protobuf->service_handle,
                                   &add_char_params,

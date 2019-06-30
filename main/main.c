@@ -437,7 +437,7 @@ static void services_init(void)
     protobuf_init.evt_handler          = ble_protobuf_evt_hanlder;
     protobuf_init.bl_rd_sec            = SEC_JUST_WORKS;
     protobuf_init.bl_cccd_wr_sec       = SEC_JUST_WORKS;
-    protobuf_init.bl_report_rd_sec     = SEC_JUST_WORKS;
+    protobuf_init.bl_wr_sec            = SEC_JUST_WORKS;
 
     err_code = ble_protobuf_init(&m_protobuf,&protobuf_init);
     APP_ERROR_CHECK(err_code);
