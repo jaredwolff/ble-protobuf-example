@@ -2,7 +2,7 @@
 
 ![Sheep](images/protobuf.jpg)
 
-This example requires use of the NRF52 development kit. If you have no idea what the repository is, [head on over to part 1 of the tutorial.](https://www.jaredwolff.com/how-to-define-your-own-bluetooth-low-energy-configuration-service-using-protobuf/) Ready for the next step? [Part 2 is available here.](https://www.jaredwolff.com/how-to-protocol-buffer-bluetooth-low-energy-service-part-2/)
+This example requires use of the NRF52 development kit. If you have no idea what the repository is, [head on over to part 1 of the tutorial.][part1] Ready for the next step? [Part 2 is available here.][part2]
 
 This repository is also a great starting point for developing a Bluetooth Low Energy project that needs OTA DFU.
 
@@ -107,8 +107,26 @@ pbjs -t static-module -p<directory with .proto> command.proto > command.pb.js
 
 ## Creating your own Service
 
-*Coming in Part 2!*
+Note: A more in-depth description is located in [Part 2.][part2]
+
+In this example, our Bluetooth Low Energy service is based off of `ble_bas` (Nordic's definition of the battery service). The battery measurement bits have been removed from this example along with renaming most of the elements to be consistent with using Protocol Buffers.
+
+Here's a description of some of the important function calls:
+
+Initialization of the service happens in `ble_protobuf_init`.
+Events for this service are funneled into `ble_protobuf_on_ble_evt`. This is probably the most important function as it allows us to receive and decode data from a Bluetooth Low Energy Connection.
+
+`ble_protobuf_init` is also split up into another function which adds the "command" characteristic to the service. Without this static function, we'd have a service to connect to but no exposed "end points" to read or write data.
+
+`ble_protobuf_on_ble_evt` forwards write events to the `on_write` function. Here, data is decoded, modified and then made available for reading. In this case a simple read and write is used for this characteristic. There are other examples in the Nordic SDK that use notifications. Notifications are event based so the device doesn't have to be polled while waiting for data.
+
+All initialization of the service happens in `services_init` in `main.c`. I encourage you to take a look to see how it's done. The initialization is dictated by an initialization struct `ble_protobuf_init_t`. This struct defines not only a callback but it also defines the security settings for the characteristic.
+
+This service has been created so you can modify it and make it your own. Often Protocol Buffer data will want to be pushed into the "main context." You can use `p_protobuf->evt_handler()` to make data available in `main.c`. In this example `p_protobuf->evt_handler` a pointer to `ble_protobuf_evt_hanlder`.
 
 ## License
 
 MIT Licensed
+
+[part1]: https://www.jaredwolff.com/how-to-define-your-own-bluetooth-low-energy-configuration-service-using-protobuf/
+[part2]: https://www.jaredwolff.com/how-to-protocol-buffer-bluetooth-low-energy-service-part-2/
