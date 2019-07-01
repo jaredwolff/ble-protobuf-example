@@ -17,6 +17,7 @@ Note: use this repository in conjunction with the [Javascript test app.](https:/
 5. Run `make gen_key` once (and only once)! This will set up your key for DFU.
 6. Run `make` and this will build your bootloader and main app.
 6. Run `make flash_all` to flash the whole app to your NRF52 Development Kit.
+7. Run `make debug` to connect to the device for debugging. Then, run `jlinkrttclient` to get your debug console. Both steps are required.
 
 ## Setup for other platforms
 
