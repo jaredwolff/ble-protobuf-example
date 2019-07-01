@@ -2,7 +2,7 @@
 
 ![Sheep](images/protobuf.jpg)
 
-This example requires use of the NRF52 development kit. If you have no idea what the repository is, [head on over to part 1 of the tutorial.](https://www.jaredwolff.com/how-to-define-your-own-bluetooth-low-energy-configuration-service-using-protobuf/)
+This example requires use of the NRF52 development kit. If you have no idea what the repository is, [head on over to part 1 of the tutorial.](https://www.jaredwolff.com/how-to-define-your-own-bluetooth-low-energy-configuration-service-using-protobuf/) Ready for the next step? [Part 2 is available here.](https://www.jaredwolff.com/how-to-protocol-buffer-bluetooth-low-energy-service-part-2/)
 
 This repository is also a great starting point for developing a Bluetooth Low Energy project that needs OTA DFU.
 
@@ -17,6 +17,7 @@ Note: use this repository in conjunction with the [Javascript test app.](https:/
 1. Run `make gen_key` once (and only once)! This will set up your key for DFU.
 1. Run `make` and this will build your bootloader and main app.
 1. Run `make flash_all` to flash the whole app to your NRF52 Development Kit.
+1. Run `make debug` to connect to the device for debugging. Then, run `jlinkrttclient` to get your debug console. Both steps are required.
 
 ## Setup for other platforms
 
