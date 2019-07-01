@@ -2,7 +2,7 @@
 
 ![Sheep](images/protobuf.jpg)
 
-This example requires use of the NRF52 development kit. If you have no idea what the repository is, [head on over to part 1 of the tutorial.](https://www.jaredwolff.com/how-to-define-your-own-bluetooth-low-energy-configuration-service-using-protobuf/)
+This example requires use of the NRF52 development kit. If you have no idea what the repository is, [head on over to part 1 of the tutorial.](https://www.jaredwolff.com/how-to-define-your-own-bluetooth-low-energy-configuration-service-using-protobuf/) Ready for the next step? [Part 2 is available here.](https://www.jaredwolff.com/how-to-protocol-buffer-bluetooth-low-energy-service-part-2/)
 
 This repository is also a great starting point for developing a Bluetooth Low Energy project that needs OTA DFU.
 
