@@ -6,7 +6,7 @@ This example requires use of the NRF52 development kit. If you have no idea what
 
 This repository is also a great starting point for developing a Bluetooth Low Energy project that needs OTA DFU.
 
-Note: use this repository in conjunction with the [Javascript test app.](https://bitbucket.org/jaredwolff/ble-protobuf-js/)
+Note: use this repository in conjunction with the [Javascript test app.](https://github.com/jaredwolff/ble-protobuf-js)
 
 ## Setup for OSX (tested)
 
